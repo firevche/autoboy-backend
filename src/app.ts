@@ -36,13 +36,33 @@ export class App {
     @inject(TYPES.PassportConfig) private passportConfig: PassportConfig
   ) {
     this.app = express();
-  this.app.use(express.json());
+    this.app.use(express.json());
+
+    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+    // Мы создаем список разрешенных адресов
+    const allowedOrigins = [
+      'https://autoboy-frontend-production.up.railway.app', // Ваш фронтенд на Railway
+      'https://autoboyclub.net', // Ваш основной домен
+      'http://localhost:3000' // Для локальной разработки (стандартный порт React)
+    ];
+
     this.app.use(cors({
-      origin: 'https://autoboyclub.net',
+      origin: function (origin, callback) {
+        // Разрешаем запросы без origin (например, Postman или мобильные приложения)
+        if (!origin) return callback(null, true);
+
+        // Проверяем, есть ли origin в нашем списке разрешенных
+        if (allowedOrigins.indexOf(origin) === -1) {
+          const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+          return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+      },
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true 
-    }));    
+    }));
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     
     this.app.use(cookieParser());
     this.app.use('/var/www/project/backend/uploads', express.static('uploads'));
